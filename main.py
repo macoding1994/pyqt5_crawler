@@ -5,7 +5,7 @@ import threading
 import time
 
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
-from PyQt5.QtWidgets import QMainWindow, QApplication, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QMainWindow, QApplication, QMessageBox, QFileDialog, QTreeWidgetItem
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from Ui_main import Ui_MainWindow
@@ -97,6 +97,7 @@ http://image.baidu.com/search/index?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=10&
         for xpath in xpathlist:
             self.infoSignal.emit('{}'.format(xpath.get_attribute('src')))
             if xpath.get_attribute('src')[:4] == 'http':
+                QTreeWidgetItem(self.treeWidget).setText(0, xpath.get_attribute('src'))
                 self.urllist.append(xpath.get_attribute('src'))
 
     def infoshow(self, res):
