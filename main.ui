@@ -23,7 +23,7 @@
       <property name="title">
        <string/>
       </property>
-      <layout class="QGridLayout" name="gridLayout" columnstretch="9,3">
+      <layout class="QGridLayout" name="gridLayout" columnstretch="9,5">
        <item row="0" column="0">
         <widget class="QTextBrowser" name="textBrowser"/>
        </item>
@@ -31,7 +31,15 @@
         <widget class="QTreeWidget" name="treeWidget">
          <column>
           <property name="text">
-           <string>当前url:</string>
+           <string>当前url</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>状态</string>
+          </property>
+          <property name="textAlignment">
+           <set>AlignLeading|AlignVCenter</set>
           </property>
          </column>
         </widget>
@@ -141,13 +149,6 @@
         <bool>false</bool>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="0">
-         <widget class="QPushButton" name="pushButton">
-          <property name="text">
-           <string>开始</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="1">
          <widget class="QPushButton" name="pushButton_4">
           <property name="text">
@@ -155,10 +156,10 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="2">
-         <widget class="QPushButton" name="pushButton_2">
+        <item row="0" column="0">
+         <widget class="QPushButton" name="pushButton">
           <property name="text">
-           <string>添加请求头</string>
+           <string>开始</string>
           </property>
          </widget>
         </item>
@@ -166,6 +167,13 @@
          <widget class="QPushButton" name="pushButton_3">
           <property name="text">
            <string>下载路径</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="pushButton_2">
+          <property name="text">
+           <string>添加请求头</string>
           </property>
          </widget>
         </item>

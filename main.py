@@ -3,8 +3,7 @@ import os
 import sys
 import threading
 import time
-
-from PyQt5.QtCore import pyqtSlot, pyqtSignal
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, Qt, QModelIndex
 from PyQt5.QtWidgets import QMainWindow, QApplication, QMessageBox, QFileDialog, QTreeWidgetItem
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -28,9 +27,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _initSheet(self):
         # self.groupBox_3.setStyleSheet("QGroupBox{border:none}")
         pass
+        self.line_url.setText(
+            'http://image.baidu.com/search/index?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=10&nc=3&ie=utf-8&word=%E8%93%9D%E8%89%B2')
+        self.line_xpath.setText('//*[@id="imgid"]/div/ul/li/div[1]/a/img')
+        self.line_headerskey.setText('Referer')
+        self.line_headersvalue.setText(
+            'http://image.baidu.com/search/index?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=2&nc=1&ie=utf-8&word=%E8%93%9D%E8%89%B2%5C')
 
     def _initParameter(self):
-        self.urllist = []
+        self.treelist = []
+        self.treename = []
         self.path = None
         self.driver = None
         self.headers = {
@@ -45,17 +51,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def _initChrome(self):
         chrome_options = Options()
-        chrome_options.add_argument('--headless')
+        # chrome_options.add_argument('--headless')
         self.driver = webdriver.Chrome(executable_path='./chromedriver.exe',
                                        chrome_options=chrome_options)
         self.driver.implicitly_wait(10)
 
     @pyqtSlot()
     def on_pushButton_clicked(self):
-        for url in self.urllist:
-            self.infoSignal.emit('任务--{}'.format(str(url)))
-            future1 = self.Pool.submit(self.action, str(url))
-            future1.add_done_callback(self.infoshow)
+        for node in self.treelist:
+            url = node.text(0)
+            status = int(node.checkState(0))
+            if status == 2:
+                self.infoSignal.emit('任务--{}'.format(str(url)))
+                future1 = self.Pool.submit(self.action, str(url))
+                future1.add_done_callback(self.infoshow)
 
     @pyqtSlot()
     def on_pushButton_2_clicked(self):
@@ -78,27 +87,38 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_pushButton_4_clicked(self):
-        '''
-http://image.baidu.com/search/index?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=10&nc=3&ie=utf-8&word=%E8%93%9D%E8%89%B2
-        '''
-        '''
-//*[@id="imgid"]/div[1]/ul/li/div[1]/a/img
-        '''
-        if self.line_xpath.text():
+        if self.line_url.text():
             process = threading.Thread(target=self.findxpath, args=(self.line_xpath.text(),))
             process.setDaemon(True)
             process.start()
 
+    @pyqtSlot(QTreeWidgetItem, int)
+    def on_treeWidget_itemClicked(self, item, column):
+        print(self.treeWidget.topLevelItemCount())
+        print(self.treeWidget.indexOfTopLevelItem(item))
+        print(item.text(0))
+        print(item.checkState(0))
+
     def findxpath(self, xpath):
-        self.infoSignal.emit('正在加载页面--{}'.format(self.line_url.text()))
-        self.driver.get(self.line_url.text())
+        if int(self.treeWidget.topLevelItemCount()) == 0:
+            self.infoSignal.emit('正在加载页面--{}'.format(self.line_url.text()))
+            self.driver.get(self.line_url.text())
         self.infoSignal.emit('页面加载完毕，开始解析xpath')
+        self.driver.switch_to.window(self.driver.window_handles[-1])
         xpathlist = self.driver.find_elements_by_xpath(xpath)
+        self.infoSignal.emit(str(len(xpathlist)))
         for xpath in xpathlist:
             self.infoSignal.emit('{}'.format(xpath.get_attribute('src')))
             if xpath.get_attribute('src')[:4] == 'http':
-                QTreeWidgetItem(self.treeWidget).setText(0, xpath.get_attribute('src'))
-                self.urllist.append(xpath.get_attribute('src'))
+                if not xpath.get_attribute('src') in self.treename:
+                    node = QTreeWidgetItem(self.treeWidget)
+                    node.setText(0, xpath.get_attribute('src'))
+                    node.setText(1, '未完成')
+                    node.setCheckState(0, Qt.Checked)
+                    self.treelist.append(node)
+                    self.treename.append(xpath.get_attribute('src'))
+        # else:
+        #     self.infoSignal.emit('{}'.format(self.treelist))
 
     def infoshow(self, res):
         if isinstance(res, str):
@@ -114,7 +134,9 @@ http://image.baidu.com/search/index?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=10&
                 self.path = os.getcwd()
             with open('{}/{}.png'.format(self.path, time.time()), 'wb') as f:
                 f.write(res.content)
-        return '{},{}'.format(res.status_code, threading.current_thread().name)
+            return '{}成功,{}'.format(res.status_code, threading.current_thread().name)
+        else:
+            return '{}失败,{}'.format(res.status_code, threading.current_thread().name)
 
 
 def main():
