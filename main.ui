@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>803</width>
-    <height>656</height>
+    <width>979</width>
+    <height>706</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -74,6 +74,83 @@
      <item row="0" column="1">
       <widget class="QLineEdit" name="line_url"/>
      </item>
+     <item row="0" column="2" rowspan="6">
+      <widget class="QGroupBox" name="groupBox">
+       <property name="minimumSize">
+        <size>
+         <width>95</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QGroupBox{border:none}</string>
+       </property>
+       <property name="title">
+        <string/>
+       </property>
+       <widget class="QComboBox" name="comboBox">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>50</y>
+          <width>69</width>
+          <height>22</height>
+         </rect>
+        </property>
+        <item>
+         <property name="text">
+          <string/>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>picture</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>video</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>music</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>m3u8</string>
+         </property>
+        </item>
+       </widget>
+       <widget class="QLabel" name="label_7">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>20</y>
+          <width>54</width>
+          <height>12</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>format:</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pushButton_5">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>100</y>
+          <width>75</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>m3u8</string>
+        </property>
+       </widget>
+      </widget>
+     </item>
      <item row="1" column="0">
       <widget class="QLabel" name="label_6">
        <property name="text">
@@ -128,7 +205,7 @@
      <item row="5" column="1">
       <widget class="QLineEdit" name="line_name"/>
      </item>
-     <item row="6" column="0" colspan="2">
+     <item row="6" column="0" colspan="3">
       <widget class="QGroupBox" name="groupBox_3">
        <property name="enabled">
         <bool>true</bool>

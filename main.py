@@ -4,6 +4,7 @@ import sys
 import threading
 import time
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, Qt, QModelIndex
+from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QMainWindow, QApplication, QMessageBox, QFileDialog, QTreeWidgetItem
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -27,12 +28,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _initSheet(self):
         # self.groupBox_3.setStyleSheet("QGroupBox{border:none}")
         pass
-        self.line_url.setText(
-            'http://image.baidu.com/search/index?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=10&nc=3&ie=utf-8&word=%E8%93%9D%E8%89%B2')
-        self.line_xpath.setText('//*[@id="imgid"]/div/ul/li/div[1]/a/img')
-        self.line_headerskey.setText('Referer')
-        self.line_headersvalue.setText(
-            'http://image.baidu.com/search/index?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=2&nc=1&ie=utf-8&word=%E8%93%9D%E8%89%B2%5C')
+        # self.line_url.setText(
+        #     'http://image.baidu.com/search/index?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=10&nc=3&ie=utf-8&word=%E8%93%9D%E8%89%B2')
+        # self.line_xpath.setText('//*[@id="imgid"]/div/ul/li/div[1]/a/img')
+        # self.line_headerskey.setText('Referer')
+        # self.line_headersvalue.setText(
+        #     'http://image.baidu.com/search/index?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=2&nc=1&ie=utf-8&word=%E8%93%9D%E8%89%B2%5C')
 
     def _initParameter(self):
         self.treelist = []
@@ -47,11 +48,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.infoSignal.connect(self.infoshow)
 
     def _initPool(self):
-        self.Pool = ThreadPoolExecutor(max_workers=10)
+        self.Pool = ThreadPoolExecutor(max_workers=8)
 
     def _initChrome(self):
         chrome_options = Options()
-        # chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--headless')
         self.driver = webdriver.Chrome(executable_path='./chromedriver.exe',
                                        chrome_options=chrome_options)
         self.driver.implicitly_wait(10)
@@ -63,7 +64,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             status = int(node.checkState(0))
             if status == 2:
                 self.infoSignal.emit('任务--{}'.format(str(url)))
-                future1 = self.Pool.submit(self.action, str(url))
+                future1 = self.Pool.submit(self.action, str(url), node)
                 future1.add_done_callback(self.infoshow)
 
     @pyqtSlot()
@@ -92,12 +93,46 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             process.setDaemon(True)
             process.start()
 
+    @pyqtSlot()
+    def on_pushButton_5_clicked(self):
+        '''
+        https://mei.huazuida.com/20191220/19592_1840d856/1000k/hls/
+        '''
+        if self.line_url.text():
+            if self.comboBox.currentText() == 'm3u8':
+                fileName_choose, filetype = QFileDialog.getOpenFileName(self,
+                                                                        "选取文件",
+                                                                        os.getcwd(),  # 起始路径
+                                                                        "All Files (*);;m3u8 Files (*.m3u8)")  # 设置文件扩展名过滤,用双分号间隔
+                if not fileName_choose:
+                    return
+                self.Pool.submit(self.m3u8,fileName_choose)
+        else:
+            QMessageBox.information(self,'提示','请填写url路径')
+
     @pyqtSlot(QTreeWidgetItem, int)
     def on_treeWidget_itemClicked(self, item, column):
         print(self.treeWidget.topLevelItemCount())
         print(self.treeWidget.indexOfTopLevelItem(item))
         print(item.text(0))
         print(item.checkState(0))
+
+    def m3u8(self,path):
+        '''
+        https://mei.huazuida.com/20191220/19592_1840d856/1000k/hls/
+        '''
+        self.treelist = []
+        with open(path,'r') as f:
+            m3u8list = f.readlines()
+        print(m3u8list)
+        for m3u8 in m3u8list:
+            if not m3u8[0] == '#':
+                url = self.line_url.text() + m3u8.strip()
+                node = QTreeWidgetItem(self.treeWidget)
+                node.setText(0, url)
+                node.setText(1, '未完成')
+                node.setCheckState(0, Qt.Checked)
+                self.treelist.append(node)
 
     def findxpath(self, xpath):
         if int(self.treeWidget.topLevelItemCount()) == 0:
@@ -125,16 +160,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.textBrowser.append(res + '\n')
         else:
             self.textBrowser.append(str(res.result()) + '\n')
+        self.textBrowser.moveCursor(QTextCursor.End)
 
-    def action(self, url):
+    def action(self, url, node):
         '''子线程-任务'''
-        res = requests.get(url, headers=self.headers)
+        try:
+            res = requests.get(url, headers=self.headers,timeout=(2,4))
+        except Exception:
+            return '{}失败--连接时间过长'.format(url)
         if res.status_code == 200:
+            end = url.rsplit('.')[-1]
+            name = time.time()
+            if self.comboBox.currentText() == 'm3u8':
+                name = url.rsplit('/')[-1].split('.')[0]
             if not self.path:
                 self.path = os.getcwd()
-            with open('{}/{}.png'.format(self.path, time.time()), 'wb') as f:
+            with open('{}/{}.{}'.format(self.path, name, end), 'wb') as f:
                 f.write(res.content)
-            return '{}成功,{}'.format(res.status_code, threading.current_thread().name)
+            self.treelist.remove(node)
+            self.treeWidget.takeTopLevelItem(self.treeWidget.indexOfTopLevelItem(node))
+            return '{}成功,{}'.format(res.status_code, name)
         else:
             return '{}失败,{}'.format(res.status_code, threading.current_thread().name)
 
